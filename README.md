@@ -1,2 +1,2 @@
 # az
-Azure utilities.
+Utilities for Microsoft Azure.
