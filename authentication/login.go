@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/chiyoi/weeds/neko"
+	"github.com/chiyoi/apricot/neko"
 )
 
 // Login opens an interactive authorization code flow.
