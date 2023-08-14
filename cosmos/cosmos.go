@@ -9,14 +9,18 @@ import (
 )
 
 func KeyExist(ctx context.Context, client *azcosmos.ContainerClient, partitionKey azcosmos.PartitionKey, itemID string) (exist bool, err error) {
-	if _, err = client.ReadItem(ctx, partitionKey, itemID, nil); err != nil {
+	if itemID == "" {
+		return false, nil
+	}
+
+	_, err = client.ReadItem(ctx, partitionKey, itemID, nil)
+	if err != nil {
 		if az.IsNotFound(err) {
 			return false, nil
 		}
 		return
-	} else {
-		return true, nil
 	}
+	return true, nil
 }
 
 func CreateItem(ctx context.Context, client *azcosmos.ContainerClient, partitionKey azcosmos.PartitionKey, item any) (err error) {
