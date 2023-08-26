@@ -8,7 +8,7 @@ import (
 	"github.com/chiyoi/apricot/kitsune"
 )
 
-func Get(ctx context.Context, endpoint string, token string, query ...string) (re *http.Response, err error) {
+func Read(ctx context.Context, endpoint string, token string, v any, query ...string) (err error) {
 	u, err := url.JoinPath(endpoint, query...)
 	if err != nil {
 		return
@@ -19,5 +19,12 @@ func Get(ctx context.Context, endpoint string, token string, query ...string) (r
 		return
 	}
 	kitsune.SetAuthorization(r.Header, token)
-	return http.DefaultClient.Do(r)
+
+	re, err := http.DefaultClient.Do(r)
+	if err != nil {
+		return
+	}
+	defer re.Body.Close()
+
+	return kitsune.ParseResponse(re, v)
 }
