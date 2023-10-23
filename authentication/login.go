@@ -26,14 +26,14 @@ func Login(endpoint Endpoint, config Config) (token Token, err error) {
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			code, err := GetCode(r)
 			if err != nil {
-				neko.InternalServerError(w, "Login failed.")
+				neko.InternalServerError(w)
 				e <- err
 				return
 			}
 
 			token, err := RedeemCode(code, endpoint, config)
 			if err != nil {
-				neko.InternalServerError(w, "Get token failed.")
+				neko.InternalServerError(w)
 				e <- err
 				return
 			}
