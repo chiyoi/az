@@ -6,8 +6,8 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.8.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
 	github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos v0.3.6
-	github.com/chiyoi/apricot/kitsune v0.5.0
-	github.com/chiyoi/apricot/neko v0.10.0
+	github.com/chiyoi/apricot/kitsune v0.6.0
+	github.com/chiyoi/apricot/neko v0.13.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.1
 )
