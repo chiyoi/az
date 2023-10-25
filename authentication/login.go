@@ -3,6 +3,7 @@ package authentication
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -13,46 +14,49 @@ import (
 
 // Login opens an interactive authorization code flow.
 // Arguments for LoginURL and RedeemCode are needed.
-func Login(endpoint Endpoint, config Config) (token Token, err error) {
+func Login(output io.Writer, endpoint Endpoint, config Config) (token Token, err error) {
+	switch runtime.GOOS {
+	case "darwin":
+		return darwinLogin(endpoint, config)
+	}
+	// TODO: Add device flow for other platforms.
+	// That is why `output` is passed in.
+	err = errors.New("unsupported platform")
+	return
+}
+
+func darwinLogin(endpoint Endpoint, config Config) (token Token, err error) {
 	u, err := url.Parse(config.RedirectURI)
 	if err != nil {
 		return
 	}
-
 	t, e := make(chan Token), make(chan error)
-
 	srv := &http.Server{
 		Addr: fmt.Sprintf(":%v", u.Port()),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			code, err := GetCode(r)
 			if err != nil {
-				neko.InternalServerError(w)
 				e <- err
+				neko.BadRequest(w)
 				return
 			}
 
 			token, err := RedeemCode(code, endpoint, config)
 			if err != nil {
-				neko.InternalServerError(w)
 				e <- err
+				neko.InternalServerError(w)
 				return
 			}
 
-			fmt.Fprintln(w, "Login success.")
 			t <- token
+			fmt.Fprintln(w, "Login success.")
 		}),
 	}
 
 	go neko.StartServer(srv, false)
 	defer neko.StopServer(srv)
 
-	switch runtime.GOOS {
-	case "darwin":
-		err = exec.Command("open", LoginURL(endpoint, config)).Start()
-	default:
-		err = errors.New("unsupported platform")
-	}
-	if err != nil {
+	if err = exec.Command("open", LoginURL(endpoint, config)).Start(); err != nil {
 		return
 	}
 
