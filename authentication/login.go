@@ -1,9 +1,9 @@
 package authentication
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -14,18 +14,17 @@ import (
 
 // Login opens an interactive authorization code flow.
 // Arguments for LoginURL and RedeemCode are needed.
-func Login(output io.Writer, endpoint Endpoint, config Config) (token Token, err error) {
+func Login(ctx context.Context, endpoint Endpoint, config Config) (token Token, err error) {
 	switch runtime.GOOS {
 	case "darwin":
-		return darwinLogin(endpoint, config)
+		return darwinLogin(ctx, endpoint, config)
 	}
 	// TODO: Add device flow for other platforms.
-	// That is why `output` is passed in.
 	err = errors.New("unsupported platform")
 	return
 }
 
-func darwinLogin(endpoint Endpoint, config Config) (token Token, err error) {
+func darwinLogin(ctx context.Context, endpoint Endpoint, config Config) (token Token, err error) {
 	u, err := url.Parse(config.RedirectURI)
 	if err != nil {
 		return
@@ -61,6 +60,8 @@ func darwinLogin(endpoint Endpoint, config Config) (token Token, err error) {
 	}
 
 	select {
+	case <-ctx.Done():
+		err = ctx.Err()
 	case token = <-t:
 	case err = <-e:
 	}
