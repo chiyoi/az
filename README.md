@@ -1,2 +1,2 @@
 # az
-Utilities for Microsoft Azure.
+Azure shortcuts.
