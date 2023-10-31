@@ -18,9 +18,10 @@ func Login(ctx context.Context, endpoint Endpoint, config Config) (token Token, 
 	switch runtime.GOOS {
 	case "darwin":
 		return darwinLogin(ctx, endpoint, config)
+	default:
+		// TODO: Add device flow for other platforms.
+		err = errors.New("unsupported platform")
 	}
-	// TODO: Add device flow for other platforms.
-	err = errors.New("unsupported platform")
 	return
 }
 
@@ -30,26 +31,27 @@ func darwinLogin(ctx context.Context, endpoint Endpoint, config Config) (token T
 		return
 	}
 	t, e := make(chan Token), make(chan error)
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		code, err := GetCode(r)
+		if err != nil {
+			e <- err
+			neko.BadRequest(w)
+			return
+		}
+
+		token, err := RedeemCode(code, endpoint, config)
+		if err != nil {
+			e <- err
+			neko.InternalServerError(w)
+			return
+		}
+
+		t <- token
+		fmt.Fprintln(w, "Login success.")
+	})
 	srv := &http.Server{
-		Addr: fmt.Sprintf(":%v", u.Port()),
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			code, err := GetCode(r)
-			if err != nil {
-				e <- err
-				neko.BadRequest(w)
-				return
-			}
-
-			token, err := RedeemCode(code, endpoint, config)
-			if err != nil {
-				e <- err
-				neko.InternalServerError(w)
-				return
-			}
-
-			t <- token
-			fmt.Fprintln(w, "Login success.")
-		}),
+		Addr:    u.Host,
+		Handler: h,
 	}
 
 	go neko.StartServer(srv, false)
