@@ -32,3 +32,9 @@ func CreateItem(ctx context.Context, client *azcosmos.ContainerClient, partition
 	_, err = client.CreateItem(ctx, partitionKey, data, nil)
 	return
 }
+
+type Schema struct {
+	PartitionKeyPath string
+	TimeToLiveOn     bool
+	TimeToLive       uint32
+}
