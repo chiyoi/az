@@ -36,5 +36,5 @@ func CreateItem(ctx context.Context, client *azcosmos.ContainerClient, partition
 type Schema struct {
 	PartitionKeyPath string
 	TimeToLiveOn     bool
-	TimeToLive       uint32
+	TimeToLive       int32
 }
