@@ -4,9 +4,16 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
 	"github.com/chiyoi/az"
 )
+
+func NewClient(endpoint string, o *azcosmos.ClientOptions) func(cred azcore.TokenCredential) (*azcosmos.Client, error) {
+	return func(cred azcore.TokenCredential) (*azcosmos.Client, error) {
+		return azcosmos.NewClient(endpoint, cred, o)
+	}
+}
 
 func KeyExist(ctx context.Context, client *azcosmos.ContainerClient, partitionKey azcosmos.PartitionKey, itemID string) (exist bool, err error) {
 	if itemID == "" {
