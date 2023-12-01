@@ -44,40 +44,42 @@ func LogoutURL(endpoint Endpoint, postLogoutRedirectURI string) string {
 // RedeemCode needs endpoint Endpoint.Token, and
 // configs Config.ClientID, Config.Scopes and RedirectURI
 // config.RedirectURI must be the same as acquiring the code
-func RedeemCode(code string, endpoint Endpoint, config Config) (tokens Token, err error) {
-	q := url.Values{}
-	q.Set("client_id", config.ClientID)
-	q.Set("scope", strings.Join(config.Scopes, " "))
-	q.Set("redirect_uri", config.RedirectURI)
-	q.Set("grant_type", "authorization_code")
-	q.Set("code", code)
+func RedeemCode(endpoint Endpoint, config Config) func(code string) (tokens Token, err error) {
+	return func(code string) (tokens Token, err error) {
+		q := url.Values{}
+		q.Set("client_id", config.ClientID)
+		q.Set("scope", strings.Join(config.Scopes, " "))
+		q.Set("redirect_uri", config.RedirectURI)
+		q.Set("grant_type", "authorization_code")
+		q.Set("code", code)
 
-	resp, err := http.DefaultClient.Post(endpoint.Token, "application/x-www-form-urlencoded", strings.NewReader(q.Encode()))
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		var ate acquireTokenError
-		if err = json.NewDecoder(resp.Body).Decode(&ate); err != nil {
+		resp, err := http.DefaultClient.Post(endpoint.Token, "application/x-www-form-urlencoded", strings.NewReader(q.Encode()))
+		if err != nil {
 			return
 		}
 
-		err = fmt.Errorf("(%s) %s", ate.Error, ate.ErrorDescription)
-		return
+		if resp.StatusCode != http.StatusOK {
+			var ate acquireTokenError
+			if err = json.NewDecoder(resp.Body).Decode(&ate); err != nil {
+				return
+			}
+
+			err = fmt.Errorf("(%s) %s", ate.Error, ate.ErrorDescription)
+			return
+		}
+
+		var atr acquireTokenResponse
+		if err = json.NewDecoder(resp.Body).Decode(&atr); err != nil {
+			return
+		}
+
+		return Token{
+			AccessToken: atr.AccessToken,
+			ExpiresAt:   time.Now().UTC().Add(time.Second * time.Duration(atr.ExpiresIn)).Unix(),
+
+			RefreshToken: atr.RefreshToken,
+		}, nil
 	}
-
-	var atr acquireTokenResponse
-	if err = json.NewDecoder(resp.Body).Decode(&atr); err != nil {
-		return
-	}
-
-	return Token{
-		AccessToken: atr.AccessToken,
-		ExpiresAt:   time.Now().UTC().Add(time.Second * time.Duration(atr.ExpiresIn)).Unix(),
-
-		RefreshToken: atr.RefreshToken,
-	}, nil
 }
 
 // Refresh needs endpoint Endpoint.Token, and

@@ -7,17 +7,16 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/chiyoi/iter/res"
 )
 
 func DefaultCredential() (credential azcore.TokenCredential, err error) {
-	if credential, err = azidentity.NewDefaultAzureCredential(nil); err != nil {
-		return
-	}
-	return RetryCredential(credential), err
+	credential, err = azidentity.NewDefaultAzureCredential(nil)
+	return res.M(credential, err, NewRetryCredential)
 }
 
-func RetryCredential(credential azcore.TokenCredential) azcore.TokenCredential {
-	return retryCredential{credential}
+func NewRetryCredential(credential azcore.TokenCredential) azcore.TokenCredential {
+	return &retryCredential{credential}
 }
 
 type retryCredential struct {

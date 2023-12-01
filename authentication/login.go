@@ -5,19 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os/exec"
 	"runtime"
 
 	"github.com/chiyoi/apricot/neko"
+	"github.com/chiyoi/iter/res"
 )
 
 // Login opens an interactive authorization code flow.
 // Arguments for LoginURL and RedeemCode are needed.
-func Login(ctx context.Context, endpoint Endpoint, config Config) (token Token, err error) {
+func Login(ctx context.Context, endpoint Endpoint, listenAddr string, config Config) (token Token, err error) {
 	switch runtime.GOOS {
 	case "darwin":
-		return darwinLogin(ctx, endpoint, config)
+		return darwinLogin(ctx, endpoint, listenAddr, config)
 	default:
 		// TODO: Add device flow for other platforms.
 		err = errors.New("unsupported platform")
@@ -25,32 +25,25 @@ func Login(ctx context.Context, endpoint Endpoint, config Config) (token Token, 
 	return
 }
 
-func darwinLogin(ctx context.Context, endpoint Endpoint, config Config) (token Token, err error) {
-	u, err := url.Parse(config.RedirectURI)
-	if err != nil {
-		return
+func darwinLogin(ctx context.Context, endpoint Endpoint, listenAddr string, config Config) (token Token, err error) {
+	type Values struct {
+		token Token
+		err   error
 	}
-	t, e := make(chan Token), make(chan error)
+
+	c := make(chan Values)
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		code, err := GetCode(r)
+		token, err := res.R(code, err, RedeemCode(endpoint, config))
+		c <- Values{token, err}
 		if err != nil {
-			e <- err
-			neko.BadRequest(w)
-			return
-		}
-
-		token, err := RedeemCode(code, endpoint, config)
-		if err != nil {
-			e <- err
 			neko.InternalServerError(w)
-			return
 		}
-
-		t <- token
 		fmt.Fprintln(w, "Login success.")
 	})
+
 	srv := &http.Server{
-		Addr:    u.Host,
+		Addr:    listenAddr,
 		Handler: h,
 	}
 
@@ -64,8 +57,8 @@ func darwinLogin(ctx context.Context, endpoint Endpoint, config Config) (token T
 	select {
 	case <-ctx.Done():
 		err = ctx.Err()
-	case token = <-t:
-	case err = <-e:
+	case v := <-c:
+		return v.token, v.err
 	}
 	return
 }
