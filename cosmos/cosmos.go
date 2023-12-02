@@ -15,7 +15,7 @@ func NewClient(endpoint string, o *azcosmos.ClientOptions) func(cred azcore.Toke
 	}
 }
 
-func KeyExist(ctx context.Context, client *azcosmos.ContainerClient, partitionKey azcosmos.PartitionKey, itemID string) (exist bool, err error) {
+func Exist(ctx context.Context, client *azcosmos.ContainerClient, partitionKey azcosmos.PartitionKey, itemID string) (exist bool, err error) {
 	if itemID == "" {
 		return false, nil
 	}
