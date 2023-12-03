@@ -35,6 +35,15 @@ func PointDelete(ctx context.Context, key string) func(client *azcosmos.Containe
 	}
 }
 
+func PointUpdate(ctx context.Context, key string, value any) func(client *azcosmos.ContainerClient) (err error) {
+	return func(client *azcosmos.ContainerClient) (err error) {
+		var patch azcosmos.PatchOperations
+		patch.AppendSet("/value", value)
+		_, err = client.PatchItem(ctx, azcosmos.NewPartitionKeyString(key), key, patch, nil)
+		return
+	}
+}
+
 func PointRead(ctx context.Context, key string, value any) func(client *azcosmos.ContainerClient) (err error) {
 	return func(client *azcosmos.ContainerClient) (err error) {
 		resp, err := client.ReadItem(ctx, azcosmos.NewPartitionKeyString(key), key, nil)

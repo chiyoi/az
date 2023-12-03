@@ -25,7 +25,7 @@ func Example() {
 	}
 
 	ctx := context.Background()
-	var neko string
+	var neko, neko1 string
 
 	exist, err := PointExist(ctx, "neko")(c)
 	if err != nil {
@@ -33,6 +33,16 @@ func Example() {
 	}
 
 	if exist {
+		err = PointRead(ctx, "neko", &neko1)(c)
+		if err != nil {
+			panic(err)
+		}
+
+		err = PointUpdate(ctx, "neko", "nyan")(c)
+		if err != nil {
+			panic(err)
+		}
+
 		err = PointRead(ctx, "neko", &neko)(c)
 		if err != nil {
 			panic(err)
@@ -52,8 +62,21 @@ func Example() {
 		if err != nil {
 			panic(err)
 		}
+
+		err = PointUpdate(ctx, "neko", "nyan1")(c)
+		if err != nil {
+			panic(err)
+		}
+
+		err = PointRead(ctx, "neko", &neko1)(c)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	fmt.Println(neko)
-	// Output: nyan
+	fmt.Println(neko1)
+	// Output:
+	// nyan
+	// nyan1
 }
