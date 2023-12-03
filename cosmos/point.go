@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
+	"github.com/chiyoi/az"
 )
 
 func PointExist(ctx context.Context, key string) func(client *azcosmos.ContainerClient) (exist bool, err error) {
@@ -13,7 +14,7 @@ func PointExist(ctx context.Context, key string) func(client *azcosmos.Container
 	}
 }
 
-func PointCreate(ctx context.Context, key string, value any) func(client *azcosmos.ContainerClient) (err error) {
+func PointUpsert(ctx context.Context, key string, value any) func(client *azcosmos.ContainerClient) (err error) {
 	return func(client *azcosmos.ContainerClient) (err error) {
 		var item = struct {
 			ID    string `json:"id"`
@@ -23,7 +24,7 @@ func PointCreate(ctx context.Context, key string, value any) func(client *azcosm
 		if err != nil {
 			return
 		}
-		_, err = client.CreateItem(ctx, azcosmos.NewPartitionKeyString(key), data, nil)
+		_, err = client.UpsertItem(ctx, azcosmos.NewPartitionKeyString(key), data, nil)
 		return
 	}
 }
@@ -31,15 +32,9 @@ func PointCreate(ctx context.Context, key string, value any) func(client *azcosm
 func PointDelete(ctx context.Context, key string) func(client *azcosmos.ContainerClient) (err error) {
 	return func(client *azcosmos.ContainerClient) (err error) {
 		_, err = client.DeleteItem(ctx, azcosmos.NewPartitionKeyString(key), key, nil)
-		return
-	}
-}
-
-func PointUpdate(ctx context.Context, key string, value any) func(client *azcosmos.ContainerClient) (err error) {
-	return func(client *azcosmos.ContainerClient) (err error) {
-		var patch azcosmos.PatchOperations
-		patch.AppendSet("/value", value)
-		_, err = client.PatchItem(ctx, azcosmos.NewPartitionKeyString(key), key, patch, nil)
+		if az.IsNotFound(err) {
+			return nil
+		}
 		return
 	}
 }

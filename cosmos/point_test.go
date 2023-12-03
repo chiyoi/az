@@ -13,7 +13,7 @@ const (
 )
 
 func Example() {
-	// Point Create/Read/Delete example.
+	// Point CRUD example.
 	cred, err := identity.DefaultCredential()
 	client, err := res.R(cred, err, NewClient(EndpointCosmos, nil))
 	if err != nil {
@@ -38,7 +38,7 @@ func Example() {
 			panic(err)
 		}
 
-		err = PointUpdate(ctx, "neko", "nyan")(c)
+		err = PointUpsert(ctx, "neko", "nyan")(c)
 		if err != nil {
 			panic(err)
 		}
@@ -53,7 +53,7 @@ func Example() {
 			panic(err)
 		}
 	} else {
-		err = PointCreate(ctx, "neko", "nyan")(c)
+		err = PointUpsert(ctx, "neko", "nyan")(c)
 		if err != nil {
 			panic(err)
 		}
@@ -63,7 +63,7 @@ func Example() {
 			panic(err)
 		}
 
-		err = PointUpdate(ctx, "neko", "nyan1")(c)
+		err = PointUpsert(ctx, "neko", "nyan1")(c)
 		if err != nil {
 			panic(err)
 		}
